@@ -22,6 +22,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import {VRFCoordinatorV2Interface} from  "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFConsumerBaseV2} from  "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+
 /**
  * @title A simple Rattle Contract 
  * @author Mohammed Alawad
@@ -29,12 +32,21 @@ pragma solidity ^0.8.18;
  * @dev implenents Chinlink VRFv2
  */
 
-contract Raffle {
+
+contract Raffle is VRFConsumerBaseV2 {
 
     error Raffle__NotEnoughEthSent();
 
+    uint16 private constant REQUEST_CONFIRMATION = 3; 
+    uint32 private constant NUM_WORD = 1 ; 
+
     uint256 private immutable i_enteranceFee ;
     uint256 private immutable i_interval ;
+    VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
+    bytes32 private immutable i_gasLane;
+    uint64 private immutable i_subscriptionId;
+    uint32 private immutable i_callbackGasLimit;
+
     address payable[] private s_players;
     uint256 private s_lastTimeStamp; 
 
@@ -42,10 +54,14 @@ contract Raffle {
 
     event RaffleEnter(address indexed player); 
 
-    constructor(uint256 enteranceFee, uint256 interval){
+    constructor(uint256 enteranceFee, uint256 interval, address vrfCoordinator , bytes32 gasLane, uint64 subscriptionId, uint32 callbackGasLimit) VRFConsumerBaseV2(vrfCoordinator){
         i_enteranceFee = enteranceFee; 
         i_interval = interval; 
         s_lastTimeStamp = block.timestamp; 
+        i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator); 
+        i_gasLane = gasLane; 
+        i_subscriptionId = subscriptionId; 
+        i_callbackGasLimit = callbackGasLimit; 
     }
     
     function enterRaffle() external payable {
@@ -69,6 +85,25 @@ contract Raffle {
         if (block.timestamp - s_lastTimeStamp < i_interval){
             revert();
         }
+
+        // المعاملة الأولى : بتقوم بإرسال طلب لإصدار رقم عشوائي 
+        // المعاملة الثانيه : تقوم بإستقبال الرقم العشوائي 
+
+         uint256 requestId = i_vrfCoordinator.requestRandomWords(
+            i_gasLane,// خط الغاز 
+            i_subscriptionId,
+            REQUEST_CONFIRMATION,
+            i_callbackGasLimit,
+            NUM_WORD
+        );
+
+    }
+
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal override {
 
     }
 
