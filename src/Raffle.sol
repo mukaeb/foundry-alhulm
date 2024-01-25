@@ -36,6 +36,7 @@ import {VRFConsumerBaseV2} from  "@chainlink/contracts/src/v0.8/vrf/VRFConsumerB
 contract Raffle is VRFConsumerBaseV2 {
 
     error Raffle__NotEnoughEthSent();
+    error Raffle__TansferFailed();
 
     uint16 private constant REQUEST_CONFIRMATION = 3; 
     uint32 private constant NUM_WORD = 1 ; 
@@ -49,6 +50,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     address payable[] private s_players;
     uint256 private s_lastTimeStamp; 
+    address private s_recentWinner; 
 
     /** events الأحداث */
 
@@ -104,6 +106,14 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 requestId,
         uint256[] memory randomWords
     ) internal override {
+        //5165161616151651
+        uint256 indexOfWinner = randomWords[0] % s_players.length; //1516154544 % 10 = 4 
+        address payable winner = s_players[indexOfWinner];
+        s_recentWinner = winner ; 
+        (bool success,) = winner.call{value:address(this).balance}("");
+        if (!success){
+            revert Raffle__TansferFailed();
+        }
 
     }
 
