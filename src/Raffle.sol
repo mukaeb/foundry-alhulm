@@ -37,6 +37,12 @@ contract Raffle is VRFConsumerBaseV2 {
 
     error Raffle__NotEnoughEthSent();
     error Raffle__TansferFailed();
+    error Raffle__NotOpen();
+
+    enum RaffleState{
+        OPEN,
+        CALCULATING
+    }
 
     uint16 private constant REQUEST_CONFIRMATION = 3; 
     uint32 private constant NUM_WORD = 1 ; 
@@ -51,6 +57,8 @@ contract Raffle is VRFConsumerBaseV2 {
     address payable[] private s_players;
     uint256 private s_lastTimeStamp; 
     address private s_recentWinner; 
+    RaffleState private s_RaffleState; 
+
 
     /** events الأحداث */
 
@@ -64,11 +72,16 @@ contract Raffle is VRFConsumerBaseV2 {
         i_gasLane = gasLane; 
         i_subscriptionId = subscriptionId; 
         i_callbackGasLimit = callbackGasLimit; 
+        s_RaffleState = RaffleState.OPEN;
     }
     
     function enterRaffle() external payable {
         if(msg.value < i_enteranceFee){
             revert Raffle__NotEnoughEthSent();
+        }
+
+        if(s_RaffleState != RaffleState.OPEN){
+            revert Raffle__NotOpen();
         }
 
         s_players.push(payable(msg.sender));
@@ -87,6 +100,8 @@ contract Raffle is VRFConsumerBaseV2 {
         if (block.timestamp - s_lastTimeStamp < i_interval){
             revert();
         }
+
+        s_RaffleState = RaffleState.CALCULATING;
 
         // المعاملة الأولى : بتقوم بإرسال طلب لإصدار رقم عشوائي 
         // المعاملة الثانيه : تقوم بإستقبال الرقم العشوائي 
@@ -110,6 +125,7 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 indexOfWinner = randomWords[0] % s_players.length; //1516154544 % 10 = 4 
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner ; 
+        s_RaffleState = RaffleState.OPEN;
         (bool success,) = winner.call{value:address(this).balance}("");
         if (!success){
             revert Raffle__TansferFailed();
