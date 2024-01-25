@@ -117,12 +117,14 @@ contract Raffle is VRFConsumerBaseV2 {
 
     }
 
-
+    //CEI : check , Effect , Interaction 
+    // الفحص ، الثاثيرات ، و التفاعلات 
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
     ) internal override {
         //5165161616151651
+        // تاثيرات 
         uint256 indexOfWinner = randomWords[0] % s_players.length; //1516154544 % 10 = 4 
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner ; 
@@ -132,7 +134,7 @@ contract Raffle is VRFConsumerBaseV2 {
         s_lastTimeStamp = block.timestamp; 
 
         emit PickedWinner(s_recentWinner) ; 
-        
+        //التفاعلات
         (bool success,) = winner.call{value:address(this).balance}("");
         if (!success){
             revert Raffle__TansferFailed();
