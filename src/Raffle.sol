@@ -34,17 +34,21 @@ contract Raffle {
     error Raffle__NotEnoughEthSent();
 
     uint256 private immutable i_enteranceFee ;
+    uint256 private immutable i_interval ;
     address payable[] private s_players;
+    uint256 private s_lastTimeStamp; 
 
     /** events الأحداث */
 
     event RaffleEnter(address indexed player); 
 
-    constructor(uint256 enteranceFee){
+    constructor(uint256 enteranceFee, uint256 interval){
         i_enteranceFee = enteranceFee; 
+        i_interval = interval; 
+        s_lastTimeStamp = block.timestamp; 
     }
     
-    function enterRaffle() public payable {
+    function enterRaffle() external payable {
         if(msg.value < i_enteranceFee){
             revert Raffle__NotEnoughEthSent();
         }
@@ -55,11 +59,22 @@ contract Raffle {
 
     }
 
-    function pickWinner() public {}
+
+    // الأول : أن تحدد رقم عشوائي 
+    // الثاني : أن نقوم بإستخدام الرقم العشوائي لتحديد الفائز
+    // الثالث : أنها تكون ذاتية التشغيل 
+    function pickWinner() external {
+        // block.timestamp - s_lastTimeStamp > i_interval ;
+        // 500 - 100 < 1000 
+        if (block.timestamp - s_lastTimeStamp < i_interval){
+            revert();
+        }
+
+    }
 
     /** Getter functions  */
 
-    function getEntranceFee() public view returns(uint256){
+    function getEntranceFee() external view returns(uint256){
         return i_enteranceFee;
     }
 }
